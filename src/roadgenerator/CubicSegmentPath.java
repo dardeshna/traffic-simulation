@@ -8,11 +8,22 @@ import static util.MatrixMath.*;
 
 public class CubicSegmentPath {
 
-	private ArrayList<CubicSegment> segments;
-	private InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> ts_map;
-	private double length;
+	ArrayList<CubicSegment> segments;
+	InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> ts_map;
+	double length;
+	double offset;
 	
-	protected CubicSegmentPath(ControlPoint[] points) {
+	CubicSegmentPath() {
+		
+	}
+	
+	public CubicSegmentPath(ControlPoint[] points) {
+		this(points, 0);
+	}
+	
+	public CubicSegmentPath(ControlPoint[] points, double offset) {
+		
+		this.offset = offset;
 		
 		segments = new ArrayList<CubicSegment>();
 		
@@ -36,7 +47,15 @@ public class CubicSegmentPath {
 			
 			double[][] result = transpose(multiply(inverse_eq_coef, p));
 			
-			segments.add(new CubicSegment(result));
+			for (double[] j: result) {
+				for (double k: j) {
+					
+					System.out.print(k + " ");
+				}
+				System.out.println();
+				
+			}
+			segments.add(new CubicSegment(result, this.offset));
 			
 		}
 
@@ -51,17 +70,22 @@ public class CubicSegmentPath {
 		while (t < t_f) {
 			
 			double ds_dt = segments.get((int)t).ds_dt(t-(int)t);
+						
 			double d2s_dt2 = segments.get((int)t).d2s_dt2(t-(int)t);
 			
-			double dt = (-ds_dt+Math.sqrt(ds_dt*ds_dt+2*d2s_dt2*ds))/(d2s_dt2);
+			double dt = (-ds_dt+Math.sqrt(Math.max(ds_dt*ds_dt+2*d2s_dt2*ds, 0)))/(d2s_dt2);
 			
 			s += ds_dt*dt + d2s_dt2*dt*dt/2;
 			
 			ts_map.put(new InterpolatingDouble(s), new InterpolatingDouble(t));
 			
 			t += dt;
+			
 		}
 		length = s;
+		
+		System.out.println(s);
+		
 	}
 	
 	
@@ -78,8 +102,24 @@ public class CubicSegmentPath {
 		else {
 			t = ts_map.getInterpolated(s_1).value;
 		}
-		t = Math.min(Math.max(0.0, t), segments.size());
+		t = Math.min(Math.max(0.0, t), segments.size()-(1e-12));
 		return segments.get((int)t).r(t-(int)t);
+	}
+	
+	public double t(double s) {
+		InterpolatingDouble s_1 = new InterpolatingDouble(s);
+		double t;
+		if (ts_map.higherKey(s_1) == null) {
+			t = ts_map.lastEntry().getValue().value;
+		}
+		else if (ts_map.lowerKey(s_1) == null) {
+			t = ts_map.firstEntry().getValue().value;
+		}
+		else {
+			t = ts_map.getInterpolated(s_1).value;
+		}
+		t = Math.min(Math.max(0.0, t), segments.size()-(1e-12));
+		return t;
 	}
 	
 	public double getPathLength() {
