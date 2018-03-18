@@ -7,6 +7,13 @@ import util.InterpolatingTreeMap;
 import static util.MatrixMath.*;
 
 public class CubicSegmentPath {
+	
+	/*
+	 * Conventions:
+	 * r -> 2D position
+	 * t -> parametric position (each segment has length 1)
+	 * s -> arc length position (meters)
+	 */
 
 	ArrayList<CubicSegment> segments;
 	InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> ts_map;
@@ -27,6 +34,7 @@ public class CubicSegmentPath {
 		
 		segments = new ArrayList<CubicSegment>();
 		
+		//Calculate cubic splines between control points
 		for (int i = 0; i < points.length-1; i++) {
 			ControlPoint p1 = points[i];
 			ControlPoint p2 = points[i+1];
@@ -47,17 +55,18 @@ public class CubicSegmentPath {
 			
 			double[][] result = transpose(multiply(inverse_eq_coef, p));
 			
-			for (double[] j: result) {
-				for (double k: j) {
-					
-					System.out.print(k + " ");
-				}
-				System.out.println();
-				
-			}
+//			for (double[] j: result) {
+//				for (double k: j) {
+//					System.out.print(k + " ");
+//				}
+//				System.out.println();
+//			}
+			
 			segments.add(new CubicSegment(result, this.offset));
 			
 		}
+		
+		//Arc length parameterize the entire path
 
 		int t_f = segments.size();
 		
@@ -88,8 +97,7 @@ public class CubicSegmentPath {
 		
 	}
 	
-	
-	
+	//Return 2D position given arc length position
 	public double[] r(double s) {
 		InterpolatingDouble s_1 = new InterpolatingDouble(s);
 		double t;
@@ -106,6 +114,7 @@ public class CubicSegmentPath {
 		return segments.get((int)t).r(t-(int)t);
 	}
 	
+	//Return parametric position given arc length position
 	public double t(double s) {
 		InterpolatingDouble s_1 = new InterpolatingDouble(s);
 		double t;

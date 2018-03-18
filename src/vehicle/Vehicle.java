@@ -4,18 +4,19 @@ import java.util.Optional;
 
 public class Vehicle {
 	
-	public final double T = 1.2; //s
-	public final double s_0 = 2.0; //m
+	public final double T = 1.2; //s, desired time gap between cars
+	public final double s_0 = 2.0; //m, minimum spacing between cars
+	
 	public class Pose {
-		public double s;
-		public double[] r;
-		public double t;
-		public double v;
-		public double a;
-		public Optional<Double> dv = Optional.empty();
-		public Optional<Double> gap_a = Optional.empty();
-		public double gap_d;
-		public double lane;
+		public double s;  //Arc length position
+		public double[] r;  //2D position
+		public double t;  //Parametric position
+		public double v;  //Velocity
+		public double a;  //Acceleration
+		public Optional<Double> dv = Optional.empty();  //Relative velocity to car in front
+		public Optional<Double> gap_a = Optional.empty();  //Actual gap with car in front
+		public double gap_d;  //Desired gap with car in front
+		public double lane;  //Lane (lateral position)
 		
 		public Pose copy() {
 			Pose p = new Pose();
@@ -54,9 +55,9 @@ public class Vehicle {
 		this.pose = lastPose;
 	}
 	public void update(double dt) {
+		
 		if (front == null) {
 			pose.a = a_max * (1-lastPose.v/v_max);
-			
 		}
 		else {
 			pose.gap_d = Math.max(0, lastPose.v*T + lastPose.v*lastPose.dv.get() / a_max) + s_0;
@@ -66,17 +67,19 @@ public class Vehicle {
 		pose.v = lastPose.v + pose.a*dt;
 		pose.s = lastPose.s + pose.v*dt + pose.a*dt*dt;
 
+		//If calculated velocity < 0, don't move backwards
 		if (pose.v < 0) {
 			pose.v = 0;
 			pose.s = lastPose.s;
 		}
-		
-//		System.out.println(pose.s);
-				
+						
 		lastPose = pose.copy();
 		
 	}
 	
+	/**
+	 * Updates the dependent pose elements (actual gap, relative velocity)
+	 */
 	public void updateDependent() {
 		if (front != null && front.used == true) front = null;
 

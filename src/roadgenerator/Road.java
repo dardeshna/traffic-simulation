@@ -32,8 +32,8 @@ public class Road extends JFrame {
 	
 	public ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>();
 	public int lane_count = 4;
-	public double lane_spacing = 3;
-	public double laneAddingThreadshold = 10;
+	public double lane_spacing = 3;  //meters
+	public double laneAddingThreadshold = 10; //meters
 	public CubicSegmentPath[] lanes = new CubicSegmentPath[lane_count];
 	
 	public double t;
@@ -46,6 +46,8 @@ public class Road extends JFrame {
 		}
 		
 		JPanel panel = new JPanel() {
+			
+			//Window zoom and pan controls
 			
 			private int c_x;
 			private int c_y;
@@ -92,16 +94,10 @@ public class Road extends JFrame {
 				}
 
 				@Override
-				public void keyPressed(KeyEvent e) {
-					
-					
-				}
+				public void keyPressed(KeyEvent e) { }
 
 				@Override
-				public void keyReleased(KeyEvent e) {
-					// TODO Auto-generated method stub
-					
-				}
+				public void keyReleased(KeyEvent e) { }
 		        
 			});
 			}
@@ -113,6 +109,11 @@ public class Road extends JFrame {
 				paintComponent((Graphics2D) g);
 			}
 			
+			/**
+			 * 
+			 * Paints the window, road and vehicles
+			 * @param graphics
+			 */
 			public void paintComponent(Graphics2D graphics) {
 				this.setFocusable(true);
 				this.requestFocusInWindow();
@@ -126,6 +127,7 @@ public class Road extends JFrame {
 				
 				graphics.setStroke(new BasicStroke(2));
 				
+				//Paint lanes
 				for (CubicSegmentPath p: lanes) {
 					if (p != null) {
 						double s = 0;
@@ -140,6 +142,7 @@ public class Road extends JFrame {
 				
 				graphics.setStroke(new BasicStroke(4));
 
+				//Paint vehicles
 				for (Vehicle v: vehicles) {
 					double r[] = v.getR();
 					graphics.setColor(Color.BLUE);
@@ -168,9 +171,14 @@ public class Road extends JFrame {
 		pack();
 		
 	}
-
+	/**
+	 * Updates the vehicle pose and surrounding vehicles
+	 * @param dt timestep
+	 */
 	public void updateVehicles(double dt) {
 		ArrayList<Vehicle> finished = new ArrayList<Vehicle>();
+		
+		//Update vehicle pose
 		for (Vehicle v: vehicles) {
 			v.update(dt);
 			v.pose.r = lanes[(int)v.pose.lane].r(v.getS());
@@ -182,9 +190,12 @@ public class Road extends JFrame {
 			
 		}
 		
+		//Remove finished vehicles
 		for (Vehicle v: finished) {
 			vehicles.remove(v);
 		}
+		
+		//Update surrounding vehicles for each vehicle
 		for (Vehicle v: vehicles) {
 			for (Vehicle w: vehicles) {
 
@@ -219,15 +230,13 @@ public class Road extends JFrame {
 					}
 				}
 				
-				
-				
 			}
 		}
+		
+		//Update dependent pose elements for each vehicle (actual gap, relative velocity)
 		for (Vehicle v: vehicles) {
 			v.updateDependent();
-			
 		}
-		
 		
 	}
 	
@@ -235,6 +244,9 @@ public class Road extends JFrame {
 		this.repaint();
 	}
 	
+	/**
+	 * Main update function for the simulation
+	 */
 	public void update() {
 		updateVehicles(dt);
 		if (counter > 100) {
@@ -249,9 +261,13 @@ public class Road extends JFrame {
 		
 	}
 
+	/** 
+	 * Adds new vehicles to the road
+	 */
 	private void addVehicles() {
 		Vehicle[] closest = new Vehicle[lane_count];
 		
+		//Obtains the last vehicle in each lain
 		for (Vehicle v: vehicles) {
 			for (int i = 0; i < lane_count; i++) {
 				if (v.pose.lane == i) {
@@ -267,6 +283,7 @@ public class Road extends JFrame {
 		
 		int laneToAdd = (int)(Math.random()*lane_count);
 		
+		//If the last vehicle in the selected lane is far enough ahead, add a new vehicle at the same speed
 		if (closest[laneToAdd]==null || closest[laneToAdd].pose.s > laneAddingThreadshold) {
 			Vehicle w = new Vehicle(laneToAdd);
 			if (closest[laneToAdd]!=null) {

@@ -2,8 +2,15 @@ package roadgenerator;
 
 public class CubicSegment {
 
+	/*
+	 * Conventions:
+	 * r -> 2D position
+	 * t -> parametric position (each segment has length 1)
+	 * s -> arc length position (meters)
+	 */
+	
 	private double[][] coef;
-	private double offset;
+	private double offset;  //For segments that represent adjacent lanes
 	
 	public CubicSegment(double[][] coef) {
 		
