@@ -1,4 +1,4 @@
-package roadgenerator;
+package road;
 
 public class CubicSegment {
 

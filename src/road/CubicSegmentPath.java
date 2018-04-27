@@ -1,4 +1,4 @@
-package roadgenerator;
+package road;
 
 import java.util.ArrayList;
 
@@ -17,6 +17,8 @@ public class CubicSegmentPath {
 
 	ArrayList<CubicSegment> segments;
 	InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> ts_map;
+	InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> st_map;
+
 	double length;
 	double offset;
 	
@@ -65,12 +67,13 @@ public class CubicSegmentPath {
 			segments.add(new CubicSegment(result, this.offset));
 			
 		}
-		
 		//Arc length parameterize the entire path
 
 		int t_f = segments.size();
 		
 		ts_map = new InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble>();
+		st_map = new InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble>();
+
 		
 		double t = 0;
 		double s = 0;
@@ -79,21 +82,30 @@ public class CubicSegmentPath {
 		while (t < t_f) {
 			
 			double ds_dt = segments.get((int)t).ds_dt(t-(int)t);
+			
+			
 						
 			double d2s_dt2 = segments.get((int)t).d2s_dt2(t-(int)t);
 			
 			double dt = (-ds_dt+Math.sqrt(Math.max(ds_dt*ds_dt+2*d2s_dt2*ds, 0)))/(d2s_dt2);
 			
+			if(new Double(dt).equals(Double.NaN)) {
+				t += dt;
+				continue;
+			}
+			
 			s += ds_dt*dt + d2s_dt2*dt*dt/2;
 			
 			ts_map.put(new InterpolatingDouble(s), new InterpolatingDouble(t));
+			st_map.put(new InterpolatingDouble(t), new InterpolatingDouble(s));
 			
 			t += dt;
 			
 		}
 		length = s;
 		
-		System.out.println(s);
+		
+		///System.out.println(s);
 		
 	}
 	
@@ -129,6 +141,22 @@ public class CubicSegmentPath {
 		}
 		t = Math.min(Math.max(0.0, t), segments.size()-(1e-12));
 		return t;
+	}
+	
+	public double s(double t) {
+		InterpolatingDouble t_1 = new InterpolatingDouble(t);
+		double s;
+		if (st_map.higherKey(t_1) == null) {
+			s = st_map.lastEntry().getValue().value;
+		}
+		else if (st_map.lowerKey(t_1) == null) {
+			s = st_map.firstEntry().getValue().value;
+		}
+		else {
+			s = st_map.getInterpolated(t_1).value;
+		}
+		s = Math.min(Math.max(0.0, s), length-(1e-12));
+		return s;
 	}
 	
 	public double getPathLength() {
